@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#12142a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Genshin Tracker">
+<title>Genshin Tracker</title>
+<style>
+:root{--bg:#12142a;--s1:#1a1d3b;--s2:#232750;--line:#32376a;--tx:#efe8d8;--mu:#9a9fc6;--gold:#e9c46a;--sky:#7cc4ff;--serif:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;color-scheme:dark}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+body{font:15px/1.4 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+main{max-width:520px;margin:0 auto;padding:18px 14px calc(92px + env(safe-area-inset-bottom))}
+h1{font:600 1.4rem var(--serif);white-space:nowrap}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:14px}
+.top small{color:var(--mu);font-size:.78rem;text-align:right}
+.panel{display:none}.panel.on{display:block}
+section{background:var(--s1);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px}
+h2{font:600 .92rem system-ui;color:var(--mu);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.num{font-family:var(--serif);font-variant-numeric:tabular-nums}
+.big{font:600 2.2rem/1.1 var(--serif)}
+.mu{color:var(--mu)}.sm{font-size:.82rem}.center{text-align:center}
+button{font:inherit;color:inherit;background:var(--s2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer;min-height:44px}
+button:active{transform:scale(.97)}
+button.pri{background:var(--gold);color:#2a2208;border-color:var(--gold);font-weight:600}
+button.dng{border-color:#7a3a4a;color:#ff7a7a}
+button.ghost{background:none;border-color:transparent;color:var(--mu)}
+input,select,textarea{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;width:100%;min-height:44px}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.g{display:grid;gap:8px}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.row{display:flex;gap:8px;align-items:center}.sp{justify-content:space-between}
+.fld{display:block;margin-bottom:10px;font-size:.85rem;color:var(--mu)}.fld input{margin-top:4px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{padding:5px 12px;min-height:34px;border-radius:99px;font-size:.85rem;color:var(--mu)}
+.chip.on{background:var(--gold);color:#2a2208;border-color:var(--gold)}
+.bar{height:10px;border-radius:9px;background:var(--bg);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:9px;transition:width .4s}
+.li{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.li:first-child{border-top:0}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal b{font:500 .7rem system-ui;color:var(--mu);text-align:center}
+.cal button{position:relative;min-height:50px;padding:4px 0;font-size:.8rem;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.cal button.today{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+.cal button em{font-style:normal;font-size:.66rem}
+.cal u{position:absolute;top:4px;right:5px;width:5px;height:5px;border-radius:50%;background:var(--gold)}
+.lg{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold);margin-right:6px;vertical-align:middle}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--s1);border-top:1px solid var(--line);display:flex;padding:6px 6px calc(6px + env(safe-area-inset-bottom));z-index:20}
+nav button{flex:1;background:none;border:0;color:var(--mu);font-size:.74rem;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button.on{color:var(--gold)}
+nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
+#toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom));transform:translate(-50%,12px);background:var(--tx);color:var(--bg);padding:9px 16px;border-radius:99px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:60}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#sheet{position:fixed;inset:0;background:rgba(5,6,20,.7);display:none;align-items:flex-end;justify-content:center;z-index:50}
+#sheet.on{display:flex}
+#sheet>div{background:var(--s1);border:1px solid var(--line);border-radius:22px 22px 0 0;width:100%;max-width:520px;padding:20px 16px calc(20px + env(safe-area-inset-bottom))}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<header class="top"><h1>Genshin Tracker</h1><small id="hdr"></small></header>
+
+<div id="pity" class="panel on"><div id="py-view"></div></div>
+
+<div id="cal" class="panel">
+  <section><div id="cal-view"></div></section>
+  <section><h2>Записать за сегодня</h2>
+    <div class="g g4"><button data-a="cq" data-n="60">+60</button><button data-a="cq" data-n="90">+90</button><button data-a="cq" data-n="160">+160</button><button data-a="cqx">Своё</button></div>
+    <button data-a="cclr" style="width:100%;margin-top:8px">Отменить записи за сегодня</button>
+    <p class="sm mu" style="margin-top:8px">Запись добавляет примогемы в копилку. Правка дня по касанию меняет только календарь.</p></section>
+  <section><h2>Сервер</h2><select id="set-srv" aria-label="Сервер"></select>
+    <p class="sm mu" style="margin-top:8px">День меняется в 04:00 по времени сервера.</p></section>
+</div>
+
+<div id="piggy" class="panel">
+  <section><h2>Копилка</h2><div id="pg-view"></div></section>
+  <section><h2>На 5★ персонажа</h2><div id="pg-five"></div></section>
+  <section><h2>Изменить баланс</h2>
+    <div class="g g2"><input id="pg-amt" type="number" inputmode="numeric" min="0" value="160" aria-label="Сумма примогемов"><div class="g g2"><button class="pri" data-a="padd">Добавить</button><button data-a="psub">Потратить</button></div></div>
+    <p class="sm mu" style="margin-top:8px">Добавленное попадает в календарь за сегодня.</p></section>
+  <section><h2>Параметры</h2>
+    <label class="fld">Цель, примогемов<input id="pg-goal" type="number" inputmode="numeric" min="160"></label>
+    <label class="fld">Витые судьбы на руках<input id="pg-fates" type="number" inputmode="numeric" min="0"></label>
+    <label class="fld">Доход в день для прогноза<input id="pg-rate" type="number" inputmode="numeric" min="0" placeholder="авто: среднее за 14 дней"></label>
+    <label class="fld">Баннер заканчивается через, дней<input id="pg-banner" type="number" inputmode="numeric" min="0" placeholder="0, не учитывать"></label></section>
+</div>
+</main>
+
+<nav aria-label="Разделы">
+  <button data-a="go" data-id="pity" class="on"><svg viewBox="0 0 24 24"><path d="M12 2l2.5 6.5L21 11l-6.5 2.5L12 20l-2.5-6.5L3 11l6.5-2.5z"/></svg>Гарант</button>
+  <button data-a="go" data-id="cal"><svg viewBox="0 0 24 24"><path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4"/></svg>Календарь</button>
+  <button data-a="go" data-id="piggy"><svg viewBox="0 0 24 24"><path d="M6 3h12l4 6-10 12L2 9zM2 9h20"/></svg>Копилка</button>
+</nav>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="sheet"></div>
+
+<script>
+'use strict';
+const LS='genshin-tracker-v3',OLD='genshin-tracker-v2';
+const SERVERS={eu:['Европа',1],am:['Америка',-5],as:['Азия',8],tw:['TW, HK, MO',8]};
+const BANNERS={char:{n:'Персонаж',hard:90,soft:74},wep:{n:'Оружие',hard:80,soft:63},std:{n:'Стандарт',hard:90,soft:74}};
+const RES={win:'50/50 выигран',lose:'50/50 проигран',guar:'Гарант',std:'Стандарт'};
+const $=id=>document.getElementById(id),N=n=>Number(n).toLocaleString('ru'),
+  clamp=(v,a,b)=>Math.min(b,Math.max(a,v)),int=v=>Math.trunc(Number(v))||0,val=id=>Math.max(0,int($(id).value));
+const P0=()=>({p5:0,p4:0,g:false});
+const def=()=>({ver:3,prim:0,fates:0,goal:18000,rate:0,bannerDays:0,banner:'char',pity:{char:P0(),wep:P0(),std:P0()},hist:[],cal:{},server:'eu'});
+let S=def();const UI={cy:0,cm:0};
+
+function migrate(o){const s=def();s.prim=Math.max(0,int(o.primogems));s.goal=int(o.goal)||18000;
+  s.pity.char={p5:clamp(int(o.pity5),0,89),p4:clamp(int(o.pity4),0,9),g:!!o.guaranteed};
+  s.cal=o.calendar&&typeof o.calendar==='object'?o.calendar:{};return s}
+function adopt(raw){if(raw.primogems!==undefined&&!raw.ver)raw=migrate(raw);
+  S=Object.assign(def(),raw);
+  for(const k in BANNERS){const p=Object.assign(P0(),(S.pity||{})[k]);p.p5=clamp(int(p.p5),0,BANNERS[k].hard-1);p.p4=clamp(int(p.p4),0,9);p.g=!!p.g;S.pity[k]=p}
+  if(!BANNERS[S.banner])S.banner='char';if(!SERVERS[S.server])S.server='eu';
+  ['prim','fates','goal','rate','bannerDays'].forEach(k=>S[k]=Math.max(0,int(S[k])));if(S.goal<160)S.goal=18000;
+  S.hist=Array.isArray(S.hist)?S.hist:[];if(!S.cal||typeof S.cal!=='object')S.cal={}}
+function load(){let raw=null;try{raw=JSON.parse(localStorage.getItem(LS)||'null')||JSON.parse(localStorage.getItem(OLD)||'null')}catch(e){}
+  adopt(raw&&typeof raw==='object'?raw:{});save()}
+function save(){try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}}
+function commit(msg){save();render();if(msg)toast(msg)}
+let tt;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),1600)}
+
+/* игровой день меняется в 04:00 по времени сервера */
+const gameDay=()=>new Date(Date.now()+(SERVERS[S.server][1]-4)*36e5).toISOString().slice(0,10);
+const shift=(key,d)=>new Date(Date.parse(key+'T00:00:00Z')+d*864e5).toISOString().slice(0,10);
+const dLabel=(key,o)=>new Date(key+'T00:00:00Z').toLocaleDateString('ru',Object.assign({day:'numeric',month:'long',timeZone:'UTC'},o));
+
+/* крутки и гарант */
+const P=()=>S.pity[S.banner];
+function spend1(){if(S.fates>0)S.fates--;else if(S.prim>=160)S.prim-=160}
+function doPull(n,at){const B=BANNERS[S.banner],p=P();for(let i=0;i<n;i++){spend1();p.p5=Math.min(B.hard-1,p.p5+1);p.p4++;if(p.p4>=10)p.p4=0}
+  if(at)p.p4=n-at}
+function got5(r){const B=BANNERS[S.banner],p=P();spend1();
+  S.hist.unshift({t:Date.now(),b:S.banner,p:Math.min(B.hard,p.p5+1),r});S.hist=S.hist.slice(0,60);
+  p.g=r==='lose';p.p5=0;p.p4=Math.min(9,p.p4+1)}
+function got4(){const B=BANNERS[S.banner],p=P();spend1();p.p4=0;p.p5=Math.min(B.hard-1,p.p5+1)}
+function addPrim(n,log){S.prim=Math.max(0,S.prim+n);if(n>0&&log){const k=gameDay();S.cal[k]=(S.cal[k]||0)+n}}
+function avg14(){const t=gameDay();let s=0;for(let i=0;i<14;i++)s+=S.cal[shift(t,-i)]||0;return Math.round(s/14)}
+const rate=()=>S.rate>0?S.rate:avg14();
+
+/* окна вместо alert, confirm и prompt */
+const E=s=>String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+function sheet(title,body,btns){return new Promise(res=>{const el=$('sheet');
+  el.innerHTML='<div role="dialog" aria-modal="true"><h2>'+E(title)+'</h2>'+body+'<div class="g" style="margin-top:12px">'+btns.map(b=>'<button class="'+(b[2]||'')+'" data-v="'+E(b[1])+'">'+E(b[0])+'</button>').join('')+'<button class="ghost" data-v="">Отмена</button></div></div>';
+  el.classList.add('on');const inp=el.querySelector('input,textarea');
+  const done=v=>{el.classList.remove('on');el.onclick=null;document.removeEventListener('keydown',kd);res(v)};
+  const kd=e=>{if(e.key==='Escape')done(null);else if(e.key==='Enter'&&inp&&inp.tagName==='INPUT')done(inp.value)};
+  document.addEventListener('keydown',kd);
+  el.onclick=e=>{const b=e.target.closest('[data-v]');if(b)done(b.dataset.v===''?null:(inp&&b.dataset.v==='ok'?inp.value:b.dataset.v));else if(e.target===el)done(null)};
+  if(inp)inp.focus()})}
+const ask=(t,v)=>sheet(t,'<input type="number" inputmode="numeric" min="0" value="'+E(v)+'" aria-label="'+E(t)+'">',[['Сохранить','ok','pri']]);
+const yes=async t=>(await sheet(t,'',[['Да','y','dng']]))==='y';
+
+/* гарант */
+function dial(bn,size){const B=BANNERS[bn],p=S.pity[bn],pc=p.p5/B.hard*100,s=(B.soft-1)/B.hard*100,c='cx="100" cy="100" r="84" pathLength="100"';
+  return '<svg viewBox="0 0 200 200" style="width:'+size+'px;height:'+size+'px" role="img" aria-label="Гарант 5★: '+p.p5+' из '+B.hard+'"><g transform="rotate(-90 100 100)" fill="none" stroke-width="12"><circle '+c+' stroke="#232750"/>'
+   +'<circle '+c+' stroke="#e9c46a" opacity=".5" stroke-dasharray="'+(100-s)+' 100" stroke-dashoffset="'+(-s)+'"/>'
+   +(pc>0?'<circle '+c+' stroke="'+(p.p5>=B.soft?'#e9c46a':'#8f9bff')+'" stroke-linecap="round" stroke-dasharray="'+pc+' 100"/>':'')
+   +'</g><path d="M100 36l5 13 13 5-13 5-5 13-5-13-13-5 13-5z" fill="#e9c46a"/><text x="100" y="120" text-anchor="middle" class="num" font-size="50" fill="#efe8d8">'+p.p5+'</text>'
+   +'<text x="100" y="142" text-anchor="middle" font-size="12" fill="#9a9fc6">из '+B.hard+', мягкий с '+B.soft+'</text></svg>'}
+const bChips=()=>'<div class="chips" style="justify-content:center">'+Object.keys(BANNERS).map(k=>'<button class="chip '+(S.banner===k?'on':'')+'" data-a="ban" data-b="'+k+'">'+BANNERS[k].n+'</button>').join('')+'</div>';
+const status=()=>{const p=P();return S.banner==='std'?'Без 50/50':p.g?'Следующая 5★ точно ивентовая':'Следующая 5★: 50/50'};
+function renderPity(){const B=BANNERS[S.banner],p=P(),h=S.hist.filter(x=>x.b===S.banner),av=h.length?Math.round(h.reduce((a,x)=>a+x.p,0)/h.length):0;
+  $('py-view').innerHTML='<section>'+bChips()+'<div class="row" style="justify-content:center">'+dial(S.banner,210)+'</div><p class="center" style="color:var(--gold)">'+status()+'</p>'
+   +'<div style="margin-top:14px"><div class="row sp sm"><span class="mu">4★</span><span class="num">'+p.p4+' / 10, до гаранта '+(10-p.p4)+'</span></div><div class="bar" style="margin-top:6px"><i style="width:'+p.p4*10+'%;background:#b48cff"></i></div></div></section>'
+   +'<section><h2>Записать</h2><div class="g g2"><button data-a="pull" data-n="1">+1 крутка</button><button data-a="pull10">+10 круток</button><button class="pri" data-a="five">Выпала 5★</button><button data-a="four">Выпала 4★</button></div>'
+   +'<div class="g g3" style="margin-top:8px"><button data-a="fix5">Поправить 5★</button><button data-a="fix4">Поправить 4★</button><button class="dng" data-a="rst">Сброс</button></div>'
+   +'<p class="sm mu" style="margin-top:8px">Крутка списывается с судеб, а если их нет, то с 160 примогемов.</p></section>'
+   +'<section><h2><span>История 5★, '+B.n+'</span><span class="num">'+(av?'в среднем '+av:'')+'</span></h2>'
+   +(h.length?h.slice(0,12).map(x=>'<div class="li sp"><span><b class="num">'+x.p+'</b> кр. <span class="mu sm">'+RES[x.r]+'</span></span><span class="mu sm">'+new Date(x.t).toLocaleDateString('ru',{day:'numeric',month:'short'})+'</span></div>').join(''):'<p class="mu sm">Пока пусто. Запиши первую 5★ кнопкой выше.</p>')+'</section>'}
+
+/* календарь */
+const short=v=>v>=1000?(v/1000).toFixed(v%1000?1:0)+'k':v;
+function streak(){let k=gameDay(),n=0;if(!S.cal[k])k=shift(k,-1);while(S.cal[k]>0&&n<4000){n++;k=shift(k,-1)}return n}
+function renderCal(){const y=UI.cy,m=UI.cm,first=(new Date(Date.UTC(y,m,1)).getUTCDay()+6)%7,dim=new Date(Date.UTC(y,m+1,0)).getUTCDate(),today=gameDay(),T=today.split('-').map(Number),
+  key=d=>y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'),vals=[];let tot=0,best=0,bd=0;
+  for(let d=1;d<=dim;d++){const v=S.cal[key(d)]||0;vals[d]=v;tot+=v;if(v>best){best=v;bd=d}}
+  const cur=y===T[0]&&m===T[1]-1,el=cur?T[2]:(y*12+m<T[0]*12+T[1]-1?dim:0);
+  let h=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(d=>'<b>'+d+'</b>').join('')+'<i></i>'.repeat(first);
+  for(let d=1;d<=dim;d++){const k=key(d),v=vals[d],r=best?v/best:0;
+    h+='<button class="'+(k===today?'today':'')+'" data-a="cday" data-k="'+k+'"'+(v?' style="background:rgba(124,196,255,'+(.15+.5*r).toFixed(2)+');'+(r>.6?'color:#10122a':'')+'"':'')+'>'+d+((d===1||d===16)?'<u></u>':'')+(v?'<em>'+short(v)+'</em>':'')+'</button>'}
+  const st=(v,l)=>'<div><b class="num">'+v+'</b><div class="sm mu">'+l+'</div></div>';
+  $('cal-view').innerHTML='<div class="row sp" style="margin-bottom:12px"><button data-a="cnav" data-d="-1" aria-label="Предыдущий месяц">‹</button><b style="font:600 1.05rem var(--serif)">'+new Date(Date.UTC(y,m,1)).toLocaleString('ru',{month:'long',year:'numeric',timeZone:'UTC'})+'</b><button data-a="cnav" data-d="1" aria-label="Следующий месяц">›</button></div>'
+   +(cur?'':'<div class="chips" style="justify-content:center"><button class="chip" data-a="ctoday">К сегодняшнему дню</button></div>')
+   +'<div class="cal">'+h+'</div><p class="sm mu" style="margin-top:8px"><span class="lg"></span>Бездна обновляется 1 и 16 числа</p>'
+   +'<div class="g g4" style="margin-top:12px">'+st(N(tot),'за месяц')+st(el?N(Math.round(tot/el)):'—','в день')+st(best?N(best):'—',best?'лучший, '+bd+'\u2011е':'лучший день')+st(streak(),'дней подряд')+'</div>'}
+
+/* копилка */
+function forecast(left,r){const pulls=Math.floor(S.prim/160)+S.fates,bn=S.bannerDays>0?' За '+S.bannerDays+' дн. баннера будет около '+(pulls+Math.floor(r*S.bannerDays/160))+' круток.':'';
+  if(left<=0)return 'Цель достигнута.'+bn;if(r<=0)return 'Укажи доход в день, и я посчитаю дату цели.';
+  const d=Math.ceil(left/r);return 'При '+N(r)+' в день цель через '+d+' дн., '+dLabel(shift(gameDay(),d))+'.'+bn}
+function expPulls(p0,g0){let cur=new Float64Array(180),done=0,ex=0;cur[p0*2+(g0?1:0)]=1;
+  for(let k=0;k<600&&done<.9999;k++){ex+=1-done;const nx=new Float64Array(180);
+    for(let p=0;p<90;p++)for(let g=0;g<2;g++){const m=cur[p*2+g];if(!m)continue;const n=p+1,r=n>=90?1:n>=74?Math.min(1,.006+.06*(n-73)):.006,f=g?1:.55;
+      done+=m*r*f;nx[1]+=m*r*(1-f);if(r<1)nx[n*2+g]+=m*(1-r)}
+    cur=nx}
+  return ex}
+function renderFive(){const p=S.pity.char,r=rate(),have=Math.floor(S.prim/160)+S.fates,need=90-p.p5+(p.g?0:90),ex=Math.round(expPulls(p.p5,p.g));
+  const row=(l,n)=>{const miss=Math.max(0,(n-S.fates)*160-S.prim),d=r>0?Math.ceil(miss/r):0;
+    return '<div class="li sp" style="align-items:flex-start"><span>'+l+'<div class="sm mu">'+n+' круток, '+N(n*160)+' примогемов</div></span><span style="text-align:right">'
+     +(miss?'<b class="num">'+(r>0?d+' дн.':'—')+'</b><div class="sm mu">'+(r>0?dLabel(shift(gameDay(),d))+', не хватает '+N(miss):'укажи доход в день')+'</div>':'<b class="num" style="color:var(--gold)">уже хватает</b>')+'</span></div>'};
+  $('pg-five').innerHTML='<p class="sm mu" style="margin-bottom:6px">Гарант: '+p.p5+' из 90, '+(p.g?'следующая 5★ точно ивентовая':'впереди 50/50')+'. Считаю по баннеру персонажа.</p>'+row('В среднем',ex)+row('Гарантированно, максимум',need)
+   +'<p class="sm mu" style="margin-top:6px">Среднее это оценка по данным сообщества. В запасе у тебя '+have+' круток.</p>'}
+function renderPiggy(){const left=Math.max(0,S.goal-S.prim),pp=Math.min(100,S.prim/S.goal*100);
+  $('pg-view').innerHTML='<div class="row sp" style="align-items:flex-end"><div><div class="big num">'+N(S.prim)+'</div><div class="sm mu">примогемов из '+N(S.goal)+'</div></div><div class="big num" style="color:var(--sky)">'+Math.round(pp)+'%</div></div>'
+   +'<div class="bar" style="margin:12px 0"><i style="width:'+pp+'%;background:var(--sky)"></i></div>'
+   +'<div class="g g3"><div><b class="num">'+N(left)+'</b><div class="sm mu">осталось</div></div><div><b class="num">'+(Math.floor(S.prim/160)+S.fates)+'</b><div class="sm mu">круток есть</div></div><div><b class="num">'+Math.floor(S.goal/160)+'</b><div class="sm mu">круток в цели</div></div></div>'
+   +'<p class="sm mu" style="margin-top:12px">'+forecast(left,rate())+'</p>';
+  [['pg-goal',S.goal],['pg-fates',S.fates],['pg-rate',S.rate||''],['pg-banner',S.bannerDays||'']].forEach(a=>{if(document.activeElement!==$(a[0]))$(a[0]).value=a[1]})}
+function renderSrv(){$('set-srv').innerHTML=Object.keys(SERVERS).map(k=>'<option value="'+k+'"'+(S.server===k?' selected':'')+'>'+SERVERS[k][0]+', UTC'+(SERVERS[k][1]>=0?'+':'')+SERVERS[k][1]+'</option>').join('')}
+function render(){$('hdr').textContent=SERVERS[S.server][0]+', '+dLabel(gameDay());renderPity();renderCal();renderPiggy();renderFive();renderSrv()}
+function go(id){document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id===id));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.id===id));scrollTo(0,0)}
+
+const A={
+  go:d=>go(d.id),
+  ban:d=>{S.banner=d.b;commit()},
+  pull:d=>{doPull(+d.n);commit('+'+d.n+' круток')},
+  five:async()=>{const bn=S.banner,g=P().g,o=bn==='std'?[['5★ получена','std','pri']]:g?[['Ивентовая, по гарантии','guar','pri']]:[['Выиграл 50/50','win','pri'],['Проиграл 50/50','lose']];
+    const r=await sheet('Что выпало?','',o);if(r){got5(r);commit('5★ записана')}},
+  pull10:async()=>{const g='<div class="g g4" style="margin-bottom:8px">'+[1,2,3,4,5,6,7,8,9,10].map(i=>'<button data-v="'+i+'">'+i+'</button>').join('')+'</div>';
+    const v=await sheet('Когда выпала последняя 4★?',g+'<p class="sm mu">Номер крутки из этих 10. Если среди них была 5★, запиши по одной: +1 и «Выпала 5★».</p>',[['4★ не выпадала','none']]);
+    if(v===null)return;doPull(10,v==='none'?0:+v);commit('+10 круток')},
+  four:()=>{got4();commit('4★ записана')},
+  fix5:async()=>{const v=await ask('Крутки с последней 5★',P().p5);if(v!==null){P().p5=clamp(int(v),0,BANNERS[S.banner].hard-1);commit('Обновлено')}},
+  fix4:async()=>{const v=await ask('Крутки с последней 4★',P().p4);if(v!==null){P().p4=clamp(int(v),0,9);commit('Обновлено')}},
+  rst:async()=>{if(await yes('Сбросить счётчики этого баннера?')){S.pity[S.banner]=P0();commit('Сброшено')}},
+  padd:()=>{const n=val('pg-amt');addPrim(n,true);commit('+'+n)},
+  psub:()=>{const n=val('pg-amt');addPrim(-n,false);commit('−'+n)},
+  cnav:d=>{UI.cm+=+d.d;if(UI.cm<0){UI.cm=11;UI.cy--}if(UI.cm>11){UI.cm=0;UI.cy++}renderCal()},
+  ctoday:()=>{const t=gameDay().split('-');UI.cy=+t[0];UI.cm=+t[1]-1;renderCal()},
+  cday:async d=>{const v=await ask('Примогемы за '+dLabel(d.k),S.cal[d.k]||0);if(v!==null){const n=int(v);if(n>0)S.cal[d.k]=n;else delete S.cal[d.k];commit()}},
+  cq:d=>{addPrim(+d.n,true);commit('+'+d.n+' за сегодня')},
+  cqx:async()=>{const v=await ask('Сколько примогемов записать за сегодня?',60);if(v!==null&&int(v)>0){addPrim(int(v),true);commit('+'+int(v)+' за сегодня')}},
+  cclr:async()=>{const k=gameDay(),v=S.cal[k]||0;if(v&&await yes('Убрать '+N(v)+' примогемов из календаря и копилки?')){S.prim=Math.max(0,S.prim-v);delete S.cal[k];commit('Записи убраны')}}
+};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset)});
+document.addEventListener('change',e=>{const id=e.target.id,v=e.target.value;
+  if(id==='pg-goal'){S.goal=Math.max(160,int(v))||18000;commit()}else if(id==='pg-fates'){S.fates=Math.max(0,int(v));commit()}
+  else if(id==='pg-rate'){S.rate=Math.max(0,int(v));commit()}else if(id==='pg-banner'){S.bannerDays=Math.max(0,int(v));commit()}
+  else if(id==='set-srv'){S.server=v;commit('Сервер: '+SERVERS[v][0])}});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)render()});
+
+load();{const t=gameDay().split('-');UI.cy=+t[0];UI.cm=+t[1]-1}render();
+</script>
+</body>
+</html>
